@@ -68,6 +68,25 @@ def get_reservations():
     reservations = cursor.fetchall()
     db.close()
     return jsonify(reservations)
+@app.route("/devices/add", methods=["POST"])
+def add_device():
+    data = request.get_json()
+    name = data.get("name")
+    category = data.get("category")
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO devices (name, status, category) VALUES (%s, 'Available', %s)", (name, category))
+    db.commit()
+    db.close()
+    return jsonify({"message": "Device added successfully!"})
 
+@app.route("/devices/delete/<int:device_id>", methods=["DELETE"])
+def delete_device(device_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM devices WHERE id=%s", (device_id,))
+    db.commit()
+    db.close()
+    return jsonify({"message": "Device deleted successfully!"})
 if __name__ == "__main__":
     app.run(debug=True)
