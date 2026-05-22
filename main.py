@@ -1,7 +1,12 @@
 from flask import Flask, jsonify, request
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_bcrypt import Bcrypt
 import pymysql
 
 app = Flask(__name__)
+app.config["JWT_SECRET_KEY"] = "slms_secret_key_2024_very_long_and_secure"
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
 
 def get_db():
     return pymysql.connect(
@@ -16,7 +21,23 @@ def get_db():
 def home():
     return jsonify({"message": "Lab Management System is running!"})
 
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
+    user = cursor.fetchone()
+    db.close()
+    if user and user["password"] == password:
+        token = create_access_token(identity={"id": user["id"], "role": user["role"]})
+        return jsonify({"message": "Login successful!", "role": user["role"], "token": token})
+    return jsonify({"message": "Invalid username or password"}), 401
+
 @app.route("/devices")
+@jwt_required()
 def get_devices():
     db = get_db()
     cursor = db.cursor()
@@ -25,21 +46,8 @@ def get_devices():
     db.close()
     return jsonify(devices)
 
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
-    user = cursor.fetchone()
-    db.close()
-    if user:
-        return jsonify({"message": "Login successful!", "role": user["role"]})
-    return jsonify({"message": "Invalid username or password"}), 401
-
 @app.route("/book", methods=["POST"])
+@jwt_required()
 def book_device():
     data = request.get_json()
     user_id = data.get("user_id")
@@ -61,6 +69,7 @@ def book_device():
     return jsonify({"message": "Device booked successfully!"})
 
 @app.route("/reservations")
+@jwt_required()
 def get_reservations():
     db = get_db()
     cursor = db.cursor()
@@ -68,6 +77,35 @@ def get_reservations():
     reservations = cursor.fetchall()
     db.close()
     return jsonify(reservations)
+
+@app.route("/devices/add", methods=["POST"])
+@jwt_required()
+def add_device():
+    current_user = get_jwt_identity()
+    if current_user["role"] != "Admin":
+        return jsonify({"message": "Access denied!"}), 403
+    data = request.get_json()
+    name = data.get("name")
+    category = data.get("category")
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO devices (name, status, category) VALUES (%s, 'Available', %s)", (name, category))
+    db.commit()
+    db.close()
+    return jsonify({"message": "Device added successfully!"})
+
+@app.route("/devices/delete/<int:device_id>", methods=["DELETE"])
+@jwt_required()
+def delete_device(device_id):
+    current_user = get_jwt_identity()
+    if current_user["role"] != "Admin":
+        return jsonify({"message": "Access denied!"}), 403
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM devices WHERE id=%s", (device_id,))
+    db.commit()
+    db.close()
+    return jsonify({"message": "Device deleted successfully!"})
 
 if __name__ == "__main__":
     app.run(debug=True)
