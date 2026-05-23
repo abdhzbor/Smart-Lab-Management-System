@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة المشرف - Smart Lab</title>
+    <link rel="stylesheet" href="../static/style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-brand">🔬 Smart Lab - المشرف</div>
+      <div class="nav-links">
+        <a href="login.html">تسجيل الخروج</a>
+      </div>
+    </nav>
+
+    <div class="dashboard-container">
+      <h2 class="page-title">⚙️ لوحة التحكم</h2>
+
+      <!-- احصائيات -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">💻</div>
+          <div class="stat-info">
+            <h3>إجمالي الأجهزة</h3>
+            <p class="stat-number">6</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-info">
+            <h3>إجمالي الحجوزات</h3>
+            <p class="stat-number">12</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <h3>المستخدمين</h3>
+            <p class="stat-number">25</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- إضافة جهاز -->
+      <div class="admin-section">
+        <h3>➕ إضافة جهاز جديد</h3>
+        <form action="/add_device" method="POST" class="admin-form">
+          <div class="form-group">
+            <label>اسم الجهاز</label>
+            <input type="text" name="name" placeholder="مثال: جهاز 7" />
+          </div>
+          <div class="form-group">
+            <label>الحالة</label>
+            <select name="status">
+              <option value="available">متاح</option>
+              <option value="maintenance">صيانة</option>
+            </select>
+          </div>
+          <button type="submit">إضافة</button>
+        </form>
+      </div>
+
+      <!-- جدول الحجوزات -->
+      <div class="admin-section">
+        <h3>📋 الحجوزات</h3>
+        <table class="reservations-table">
+          <thead>
+            <tr>
+              <th>رقم</th>
+              <th>الطالب</th>
+              <th>الجهاز</th>
+              <th>البداية</th>
+              <th>النهاية</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>أحمد</td>
+              <td>جهاز 1</td>
+              <td>10:00</td>
+              <td>12:00</td>
+              <td><span class="status-badge active">نشط</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>سارة</td>
+              <td>جهاز 2</td>
+              <td>13:00</td>
+              <td>15:00</td>
+              <td><span class="status-badge done">منتهي</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>محمد</td>
+              <td>جهاز 4</td>
+              <td>09:00</td>
+              <td>11:00</td>
+              <td><span class="status-badge active">نشط</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
