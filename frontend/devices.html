@@ -6,6 +6,12 @@
     <title>الأجهزة - Smart Lab</title>
     <link rel="stylesheet" href="../static/style.css" />
   </head>
+  <script>
+    const token = localStorage.getItem('token');
+    const response = await fetch('http://127.0.0.1:5000/devices', {
+        headers: {'Authorization': 'Bearer ' + token}
+    });
+  </script>
   <body>
     <nav class="navbar">
       <div class="nav-brand">🔬 Smart Lab</div>
