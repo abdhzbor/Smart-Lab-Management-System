@@ -1,19 +1,26 @@
 from flask import Flask, jsonify, request
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
+from flask import send_from_directory
+import os
 import pymysql
 
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "slms_secret_key_2024_very_long_and_secure"
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
+CORS(app)
+@app.route('/frontend/<path:filename>')
+def frontend(filename):
+    return send_from_directory('../frontend', filename)
 
 def get_db():
     return pymysql.connect(
-        host='192.168.85.133',
-        port=3306,
-        user='slms_user',
-        password='slms2026',
+        host='zephyr.proxy.rlwy.net',
+        port=42957,
+        user='root',
+        password='MVJRfKpypLWESpxLPkfFGPfnMiuTOOWy',
         database='lab_management',
         cursorclass=pymysql.cursors.DictCursor
     )
