@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>حجز جهاز - Smart Lab</title>
-    <link rel="stylesheet" href="../static/style.css" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <nav class="navbar">
@@ -12,7 +12,7 @@
       <div class="nav-links">
         <a href="dashboard.html">الرئيسية</a>
         <a href="devices.html">الأجهزة</a>
-        <a href="login.html">تسجيل الخروج</a>
+        <a href="#" onclick="logout()">تسجيل الخروج</a>
       </div>
     </nav>
 
@@ -20,31 +20,84 @@
       <h2 class="page-title">📅 حجز جهاز</h2>
 
       <div class="book-container">
-        <form action="confirm.html">
+        <form onsubmit="handleBook(event)">
           <div class="form-group">
             <label>اختر الجهاز</label>
-            <select name="device_id">
+            <select id="device_id">
               <option value="">-- اختر جهاز --</option>
-              <option value="1">جهاز 1</option>
-              <option value="2">جهاز 2</option>
-              <option value="4">جهاز 4</option>
-              <option value="6">جهاز 6</option>
             </select>
           </div>
 
           <div class="form-group">
             <label>وقت البداية</label>
-            <input type="datetime-local" name="start_time" />
+            <input type="datetime-local" id="start_time" required />
           </div>
 
           <div class="form-group">
             <label>وقت النهاية</label>
-            <input type="datetime-local" name="end_time" />
+            <input type="datetime-local" id="end_time" required />
           </div>
 
+          <p id="msg" style="display:none; font-weight:bold;"></p>
           <button type="submit">تأكيد الحجز</button>
         </form>
       </div>
     </div>
+
+    <script>
+      const API = 'http://127.0.0.1:5000';
+      const token = localStorage.getItem('token');
+
+      if (!token) window.location.href = 'login.html';
+
+      async function loadDevices() {
+        const res = await fetch(API + '/devices', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const devices = await res.json();
+        const select = document.getElementById('device_id');
+
+        devices.filter(d => d.status === 'Available').forEach(d => {
+          select.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+        });
+      }
+
+      async function handleBook(e) {
+        e.preventDefault();
+        const device_id = document.getElementById('device_id').value;
+        const time_start = document.getElementById('start_time').value;
+        const time_end = document.getElementById('end_time').value;
+        const user_id = 1;
+
+        const res = await fetch(API + '/book', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ user_id, device_id: parseInt(device_id), time_start, time_end })
+        });
+
+        const data = await res.json();
+        const msg = document.getElementById('msg');
+        msg.style.display = 'block';
+
+        if (res.ok) {
+          msg.style.color = 'green';
+          msg.textContent = '✅ ' + data.message;
+          setTimeout(() => window.location.href = 'confirm.html', 1500);
+        } else {
+          msg.style.color = 'red';
+          msg.textContent = '❌ ' + data.message;
+        }
+      }
+
+      function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+
+      loadDevices();
+    </script>
   </body>
 </html>

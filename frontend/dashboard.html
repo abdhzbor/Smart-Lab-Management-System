@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>الصفحة الرئيسية - Smart Lab</title>
-    <link rel="stylesheet" href="../static/style.css" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <nav class="navbar">
@@ -12,7 +12,7 @@
       <div class="nav-links">
         <a href="devices.html">الأجهزة</a>
         <a href="book.html">حجز جهاز</a>
-        <a href="login.html">تسجيل الخروج</a>
+        <a href="#" onclick="logout()">تسجيل الخروج</a>
       </div>
     </nav>
 
@@ -27,23 +27,23 @@
           <div class="stat-icon">💻</div>
           <div class="stat-info">
             <h3>الأجهزة المتاحة</h3>
-            <p class="stat-number">8</p>
+            <p class="stat-number" id="available-count">...</p>
           </div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon">📅</div>
+          <div class="stat-icon">🔴</div>
           <div class="stat-info">
-            <h3>حجوزاتي</h3>
-            <p class="stat-number">2</p>
+            <h3>الأجهزة المحجوزة</h3>
+            <p class="stat-number" id="reserved-count">...</p>
           </div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-icon">⏰</div>
+          <div class="stat-icon">🔧</div>
           <div class="stat-info">
-            <h3>حجوزات اليوم</h3>
-            <p class="stat-number">5</p>
+            <h3>تحت الصيانة</h3>
+            <p class="stat-number" id="maintenance-count">...</p>
           </div>
         </div>
       </div>
@@ -56,5 +56,38 @@
         </div>
       </div>
     </div>
+
+    <script>
+      const API = 'http://127.0.0.1:5000';
+      const token = localStorage.getItem('token');
+
+      if (!token) window.location.href = 'login.html';
+
+      async function loadStats() {
+        try {
+          const res = await fetch(API + '/devices', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          const devices = await res.json();
+
+          const available = devices.filter(d => d.status === 'Available').length;
+          const reserved = devices.filter(d => d.status === 'Reserved').length;
+          const maintenance = devices.filter(d => d.status === 'Maintenance').length;
+
+          document.getElementById('available-count').textContent = available;
+          document.getElementById('reserved-count').textContent = reserved;
+          document.getElementById('maintenance-count').textContent = maintenance;
+        } catch (err) {
+          console.error('خطأ في تحميل البيانات');
+        }
+      }
+
+      function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+
+      loadStats();
+    </script>
   </body>
 </html>

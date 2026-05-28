@@ -9,7 +9,14 @@ jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
 
 def get_db():
-    return pymysql.connect(host='localhost', user='root', password='', database='lab_management', cursorclass=pymysql.cursors.DictCursor)
+    return pymysql.connect(
+        host='192.168.85.133',
+        port=3306,
+        user='slms_user',
+        password='slms2026',
+        database='lab_management',
+        cursorclass=pymysql.cursors.DictCursor
+    )
 
 @app.route("/")
 def home():

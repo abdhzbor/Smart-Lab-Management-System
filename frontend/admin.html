@@ -4,40 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>لوحة المشرف - Smart Lab</title>
-    <link rel="stylesheet" href="../static/style.css" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <nav class="navbar">
       <div class="nav-brand">🔬 Smart Lab - المشرف</div>
       <div class="nav-links">
-        <a href="login.html">تسجيل الخروج</a>
+        <a href="#" onclick="logout()">تسجيل الخروج</a>
       </div>
     </nav>
 
     <div class="dashboard-container">
       <h2 class="page-title">⚙️ لوحة التحكم</h2>
 
-      <!-- احصائيات -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon">💻</div>
           <div class="stat-info">
             <h3>إجمالي الأجهزة</h3>
-            <p class="stat-number">6</p>
+            <p class="stat-number" id="total-devices">...</p>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">📅</div>
           <div class="stat-info">
             <h3>إجمالي الحجوزات</h3>
-            <p class="stat-number">12</p>
+            <p class="stat-number" id="total-reservations">...</p>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">👥</div>
+          <div class="stat-icon">✅</div>
           <div class="stat-info">
-            <h3>المستخدمين</h3>
-            <p class="stat-number">25</p>
+            <h3>الأجهزة المتاحة</h3>
+            <p class="stat-number" id="available-devices">...</p>
           </div>
         </div>
       </div>
@@ -45,18 +44,20 @@
       <!-- إضافة جهاز -->
       <div class="admin-section">
         <h3>➕ إضافة جهاز جديد</h3>
-        <form action="/add_device" method="POST" class="admin-form">
+        <form onsubmit="addDevice(event)" class="admin-form">
           <div class="form-group">
             <label>اسم الجهاز</label>
-            <input type="text" name="name" placeholder="مثال: جهاز 7" />
+            <input type="text" id="device-name" placeholder="مثال: Computer 7" required />
           </div>
           <div class="form-group">
-            <label>الحالة</label>
-            <select name="status">
-              <option value="available">متاح</option>
-              <option value="maintenance">صيانة</option>
+            <label>الفئة</label>
+            <select id="device-category">
+              <option value="PC">PC</option>
+              <option value="Printer">Printer</option>
+              <option value="Lab Equipment">Lab Equipment</option>
             </select>
           </div>
+          <p id="add-msg" style="display:none; font-weight:bold;"></p>
           <button type="submit">إضافة</button>
         </form>
       </div>
@@ -68,41 +69,137 @@
           <thead>
             <tr>
               <th>رقم</th>
-              <th>الطالب</th>
+              <th>المستخدم</th>
               <th>الجهاز</th>
               <th>البداية</th>
               <th>النهاية</th>
-              <th>الحالة</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="reservations-body">
+            <tr><td colspan="5">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- جدول الأجهزة مع حذف -->
+      <div class="admin-section">
+        <h3>🖥️ إدارة الأجهزة</h3>
+        <table class="reservations-table">
+          <thead>
             <tr>
-              <td>1</td>
-              <td>أحمد</td>
-              <td>جهاز 1</td>
-              <td>10:00</td>
-              <td>12:00</td>
-              <td><span class="status-badge active">نشط</span></td>
+              <th>رقم</th>
+              <th>الاسم</th>
+              <th>الحالة</th>
+              <th>الفئة</th>
+              <th>حذف</th>
             </tr>
-            <tr>
-              <td>2</td>
-              <td>سارة</td>
-              <td>جهاز 2</td>
-              <td>13:00</td>
-              <td>15:00</td>
-              <td><span class="status-badge done">منتهي</span></td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td>محمد</td>
-              <td>جهاز 4</td>
-              <td>09:00</td>
-              <td>11:00</td>
-              <td><span class="status-badge active">نشط</span></td>
-            </tr>
+          </thead>
+          <tbody id="devices-body">
+            <tr><td colspan="5">جاري التحميل...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
+
+    <script>
+      const API = 'http://127.0.0.1:5000';
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+
+      if (!token || role !== 'Admin') window.location.href = 'login.html';
+
+      async function loadData() {
+        const devRes = await fetch(API + '/devices', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const devices = await devRes.json();
+
+        document.getElementById('total-devices').textContent = devices.length;
+        document.getElementById('available-devices').textContent =
+          devices.filter(d => d.status === 'Available').length;
+
+        const tbody = document.getElementById('devices-body');
+        tbody.innerHTML = '';
+        devices.forEach(d => {
+          const statusAr = d.status === 'Available' ? 'متاح' :
+                           d.status === 'Reserved' ? 'محجوز' : 'صيانة';
+          tbody.innerHTML += `
+            <tr>
+              <td>${d.id}</td>
+              <td>${d.name}</td>
+              <td>${statusAr}</td>
+              <td>${d.category || '-'}</td>
+              <td><button onclick="deleteDevice(${d.id})" style="background:red;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;">حذف</button></td>
+            </tr>`;
+        });
+
+        const resRes = await fetch(API + '/reservations', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const reservations = await resRes.json();
+
+        document.getElementById('total-reservations').textContent = reservations.length;
+
+        const resTbody = document.getElementById('reservations-body');
+        resTbody.innerHTML = '';
+        if (reservations.length === 0) {
+          resTbody.innerHTML = '<tr><td colspan="5">لا توجد حجوزات</td></tr>';
+        } else {
+          reservations.forEach(r => {
+            resTbody.innerHTML += `
+              <tr>
+                <td>${r.id}</td>
+                <td>${r.user_id}</td>
+                <td>${r.device_id}</td>
+                <td>${r.time_start}</td>
+                <td>${r.time_end}</td>
+              </tr>`;
+          });
+        }
+      }
+
+      async function addDevice(e) {
+        e.preventDefault();
+        const name = document.getElementById('device-name').value;
+        const category = document.getElementById('device-category').value;
+
+        const res = await fetch(API + '/devices/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ name, category })
+        });
+
+        const data = await res.json();
+        const msg = document.getElementById('add-msg');
+        msg.style.display = 'block';
+        msg.style.color = res.ok ? 'green' : 'red';
+        msg.textContent = res.ok ? '✅ ' + data.message : '❌ ' + data.message;
+
+        if (res.ok) loadData();
+      }
+
+      async function deleteDevice(id) {
+        if (!confirm('هل أنت متأكد من حذف الجهاز؟')) return;
+
+        const res = await fetch(API + '/devices/delete/' + id, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        const data = await res.json();
+        alert(data.message);
+        loadData();
+      }
+
+      function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+
+      loadData();
+    </script>
   </body>
 </html>
